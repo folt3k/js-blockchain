@@ -1,18 +1,17 @@
 import sha256 from 'crypto-js/sha256';
+
 import Transaction from './transaction';
 
 class Block {
-  timestamp: number;
+  timestamp = new Date().getTime();
   hash = '';
   nonce = 0;
 
   constructor(
     public index: number,
     public transactions: Transaction[] = [],
-    public previousHash?: string
-  ) {
-    this.timestamp = new Date().getTime();
-  }
+    public previousHash?: string,
+  ) {}
 
   getHash(): string {
     return this.hash;
@@ -24,7 +23,7 @@ class Block {
         (this.previousHash || '') +
         this.timestamp +
         JSON.stringify(this.transactions) +
-        this.nonce
+        this.nonce,
     ).toString();
   }
 
