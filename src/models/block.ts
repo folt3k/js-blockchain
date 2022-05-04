@@ -37,6 +37,10 @@ class Block {
 
     console.log(`Minning takes ${(new Date().getTime() - startTime) / 1000} seconds :)`);
   }
+
+  hasValidTransactions(): boolean {
+    return this.transactions.every((tx) => tx.isValid());
+  }
 }
 
 export default Block;

@@ -15,7 +15,7 @@ class Blockchain {
     const block = new Block(
       this.chain.length,
       this.pendingTransactions,
-      this.getPreviousBlock().getHash()
+      this.getPreviousBlock().getHash(),
     );
 
     block.mine(this.difficulty);
@@ -28,9 +28,13 @@ class Blockchain {
 
   addTransaction(transaction: Transaction): void {
     if (this.getBalance(transaction.fromAddress!) >= transaction.amount) {
-      this.pendingTransactions.push(transaction);
+      if (transaction.isValid()) {
+        this.pendingTransactions.push(transaction);
+      } else {
+        throw new Error('Invalid transaction');
+      }
     } else {
-      console.log('No sufficient funnds!');
+      throw new Error('No sufficient funnds!');
     }
   }
 
@@ -65,6 +69,10 @@ class Blockchain {
 
       if (currentBlock.previousHash !== prevBlock.getHash()) {
         throw new Error(`Hash of block #${currentBlock.index} is not equal to its previous block`);
+      }
+
+      if (!currentBlock.hasValidTransactions()) {
+        throw new Error(`Block ${currentBlock.index} has invalid transactions`);
       }
     }
 
