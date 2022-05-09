@@ -6,7 +6,7 @@ import Transaction from './models/transaction';
 const router = Router();
 
 router.get('/chain', (req, res) => {
-  res.json({ data: { chain: blockchain.chain } });
+  res.json({ data: { chain: blockchain.chain, length: blockchain.chain.length } });
 });
 
 router.post('/transactions', (req, res) => {
@@ -18,6 +18,17 @@ router.post('/transactions', (req, res) => {
     blockchain.addTransaction(tx1);
 
     res.json(tx1);
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
+  }
+});
+
+router.post('/mine-block', async (req, res) => {
+  const { minerAddress } = req.body;
+
+  try {
+    const block = await blockchain.mineBlock(minerAddress);
+    res.status(200).json(block);
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }

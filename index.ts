@@ -20,10 +20,6 @@ app.listen(3000, async () => {
   await blockchain.createGenesisBlock();
   await blockchain.mineBlock(myPublicKey);
   await blockchain.mineBlock(myPublicKey);
-
-
-  // await blockchain.mineBlock(myPublicKey);
-  // await blockchain.mineBlock(myPublicKey);
   // await blockchain.mineBlock(myPublicKey);
   // await blockchain.mineBlock(myPublicKey);
   //
