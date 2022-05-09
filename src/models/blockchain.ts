@@ -2,28 +2,31 @@ import Block from './block';
 import Transaction from './transaction';
 
 class Blockchain {
-  chain: Block[] = [new Block(0, [])];
+  chain: Block[] = [];
   difficulty = 1;
   pendingTransactions: Transaction[] = [];
   minningReward = 100;
 
-  constructor() {
-    this.chain[0].mine(this.difficulty);
+  createGenesisBlock(): Promise<void> {
+    const genesisBlock = new Block(0, []);
+    return genesisBlock.mine(this.difficulty).then((block) => {
+      this.chain[0] = block;
+    });
   }
 
-  mineBlock(miningRewardAddress: string): Block {
+  mineBlock(miningRewardAddress: string): Promise<Block> {
     const block = new Block(
       this.chain.length,
       this.pendingTransactions,
       this.getPreviousBlock().getHash(),
     );
 
-    block.mine(this.difficulty);
-    this.chain.push(block);
+    return block.mine(this.difficulty).then((minedBlock) => {
+      this.chain.push(minedBlock);
+      this.pendingTransactions = [new Transaction(null, miningRewardAddress, this.minningReward)];
 
-    this.pendingTransactions = [new Transaction(null, miningRewardAddress, this.minningReward)];
-
-    return block;
+      return minedBlock;
+    });
   }
 
   addTransaction(transaction: Transaction): void {

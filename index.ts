@@ -15,19 +15,21 @@ app.get('/', (req, res) => {
   res.send('Test');
 });
 
-app.listen(3000, () => {
+app.listen(3000, async () => {
   console.log(`⚡ Server is running at http://localhost:${3000}`);
 
-  blockchain.mineBlock(myPublicKey);
-  blockchain.mineBlock('tomek');
-  const tx1 = new Transaction(
-    '048a88f4c8c9cde13a5525342bd2cac2c22741eb3defa2aa5e84906ed07f4e4ff3641c160733daa503486057a64f35e231996b12334386de29046995c9ef908bd5',
-    'tomek',
-    100,
-  );
-  // tx1.sign(myPrivateKey);
+  await blockchain.createGenesisBlock();
+  await blockchain.mineBlock(myPublicKey);
+  await blockchain.mineBlock(myPublicKey);
+  await blockchain.mineBlock(myPublicKey);
+  await blockchain.mineBlock(myPublicKey);
+  await blockchain.mineBlock(myPublicKey);
+
+  const tx1 = new Transaction(myPublicKey, 'tomek', 100);
+  tx1.sign(myPrivateKey);
   blockchain.addTransaction(tx1);
-  blockchain.mineBlock('tomek');
+
+  await blockchain.mineBlock('tomek');
 
   console.log(blockchain.chain);
   console.log(blockchain.getBalance('kamil'));

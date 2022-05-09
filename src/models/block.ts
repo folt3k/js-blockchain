@@ -17,25 +17,53 @@ class Block {
     return this.hash;
   }
 
-  calculateHash(): string {
+  calculateHash(options: { timestamp?: number; nonce?: number } = {}): string {
     return sha256(
       this.index +
         (this.previousHash || '') +
-        this.timestamp +
+        (options.timestamp || this.timestamp) +
         JSON.stringify(this.transactions) +
-        this.nonce,
+        (options.nonce || this.nonce),
     ).toString();
   }
 
-  mine(difficulty: number = 0): void {
-    const startTime = new Date().getTime();
+  mine(difficulty: number = 0): Promise<Block> {
+    const mine = (
+      cb: ({ hash, nonce, timestamp }: { hash: string; nonce: number; timestamp: number }) => void,
+    ) => {
+      const leadingZeros = Array(difficulty + 1).join('0');
+      const timestamp = new Date().getTime();
+      let nonce = 0;
+      let hash = this.calculateHash({ timestamp, nonce });
 
-    while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')) {
-      this.nonce++;
-      this.hash = this.calculateHash();
-    }
+      while (
+        hash.substring(0, difficulty) !== leadingZeros &&
+        new Date().getTime() <= timestamp + 1000
+      ) {
+        nonce++;
+        hash = this.calculateHash({ timestamp, nonce });
+      }
 
-    console.log(`Minning takes ${(new Date().getTime() - startTime) / 1000} seconds :)`);
+      if (hash.substring(0, difficulty) === leadingZeros) {
+        cb({ hash, nonce, timestamp });
+      }
+    };
+
+    return new Promise<Block>((resolve) => {
+      const startTime = new Date().getTime();
+      const interval = setInterval(() => {
+        mine(({ hash, nonce, timestamp }: { hash: string; nonce: number; timestamp: number }) => {
+          clearInterval(interval);
+
+          this.hash = hash;
+          this.nonce = nonce;
+          this.timestamp = timestamp;
+
+          console.log(`Minning takes ${(new Date().getTime() - startTime) / 1000} seconds :)`);
+          resolve(this);
+        });
+      }, 1000);
+    });
   }
 
   hasValidTransactions(): boolean {

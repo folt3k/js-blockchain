@@ -4,9 +4,12 @@ import sha256 from 'crypto-js/sha256';
 const ec = new EC('secp256k1');
 
 class Transaction {
-  private signature!: string;
+  hash!: string;
+  signature!: string;
 
-  constructor(public fromAddress: string | null, public toAddress: string, public amount: number) {}
+  constructor(public fromAddress: string | null, public toAddress: string, public amount: number) {
+    this.hash = this.calculateHash;
+  }
 
   get calculateHash(): string {
     return sha256(this.fromAddress + this.toAddress + this.amount).toString();
@@ -25,7 +28,7 @@ class Transaction {
 
     try {
       const key = ec.keyFromPublic(this.fromAddress as string, 'hex');
-      return key.verify(this.calculateHash, this.signature);
+      return this.hash === this.calculateHash && key.verify(this.calculateHash, this.signature);
     } catch (err) {
       return false;
     }
