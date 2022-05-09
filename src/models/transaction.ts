@@ -16,9 +16,13 @@ class Transaction {
   }
 
   sign(privateKey: string): void {
-    const key = ec.keyFromPrivate(privateKey);
-    const signature = key.sign(this.calculateHash, 'base64');
-    this.signature = signature.toDER('hex');
+    try {
+      const key = ec.keyFromPrivate(privateKey);
+      const signature = key.sign(this.calculateHash, 'base64');
+      this.signature = signature.toDER('hex');
+    } catch (e) {
+      throw new Error('Failed to create transaction signature!');
+    }
   }
 
   isValid(): boolean {

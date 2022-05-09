@@ -14,7 +14,8 @@
   "rules": {
     "no-plusplus": "off",
     "@typescript-eslint/lines-between-class-members": "off",
-    "operator-linebreak": "off"
+    "operator-linebreak": "off",
+    "object-curly-newline": "off"
   },
   "settings": {}
 }
