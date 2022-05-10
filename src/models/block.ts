@@ -3,14 +3,13 @@ import sha256 from 'crypto-js/sha256';
 import Transaction from './transaction';
 
 class Block {
-  timestamp = new Date().getTime();
-  hash = '';
-  nonce = 0;
-
   constructor(
     public index: number,
     public transactions: Transaction[] = [],
-    public previousHash?: string,
+    public previousHash: string | null = null,
+    public timestamp = new Date().getTime(),
+    public hash = '',
+    public nonce = 0,
   ) {}
 
   getHash(): string {
