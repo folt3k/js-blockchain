@@ -30,7 +30,7 @@ router.post('/connect', async (req, res) => {
           blockchain.updateNodes(data.nodes);
         }
 
-        if (data.chain) {
+        if (data.chain && data.chain.length > blockchain.chain.length) {
           blockchain.updateChain(data.chain);
         }
 
@@ -73,6 +73,10 @@ router.post('/transactions', (req, res) => {
     tx1.sign(privateKey);
     blockchain.addTransaction(tx1);
 
+    blockchain.nodes.forEach((node) => {
+      axios.post(`${node.host}/listener/on-transaction-created`, { transaction: tx1 });
+    });
+
     res.json(tx1);
   } catch (e: any) {
     res.status(400).json({ message: e.message });
@@ -85,7 +89,6 @@ router.post('/mine-block', async (req, res) => {
   try {
     const block = await blockchain.mineBlock(minerAddress);
 
-    console.log(blockchain.nodes);
     blockchain.nodes.forEach((node) => {
       axios.post(`${node.host}/listener/on-block-mined`, { block });
     });
@@ -106,7 +109,8 @@ router.post('/listener/on-block-mined', (req, res) => {
       new Block(
         block.index,
         block.transactions.map(
-          (t) => new Transaction(t.fromAddress, t.toAddress, t.amount, t.hash, t.signature),
+          (t) =>
+            new Transaction(t.fromAddress, t.toAddress, t.amount, t.hash, t.signature, t.timestamp),
         ),
         block.previousHash,
         block.timestamp,
@@ -122,6 +126,20 @@ router.post('/listener/on-block-mined', (req, res) => {
         axios.post(`${node.host}/listener/on-block-mined`, { block });
       });
     }
+  }
+});
+
+router.post('/listener/on-transaction-created', (req, res) => {
+  const { transaction } = req.body;
+
+  console.log('body', req.body);
+
+  try {
+    blockchain.updatePendingTransactions([transaction]);
+
+    res.json(transaction);
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
 });
 

@@ -10,12 +10,14 @@ class Transaction {
     public amount: number,
     public hash?: string,
     public signature?: string,
+    public timestamp?: number,
   ) {
+    this.timestamp = timestamp || new Date().getTime();
     this.hash = hash || this.calculateHash;
   }
 
   get calculateHash(): string {
-    return sha256(this.fromAddress + this.toAddress + this.amount).toString();
+    return sha256(this.fromAddress + this.toAddress + this.amount + this.timestamp).toString();
   }
 
   sign(privateKey: string): void {
