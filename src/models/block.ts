@@ -12,10 +12,6 @@ class Block {
     public nonce = 0,
   ) {}
 
-  getHash(): string {
-    return this.hash;
-  }
-
   calculateHash(options: { timestamp?: number; nonce?: number } = {}): string {
     return sha256(
       this.index +

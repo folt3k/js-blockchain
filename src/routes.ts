@@ -5,61 +5,12 @@ import blockchain from '../app';
 import Transaction from './models/transaction';
 import PeerNode from './models/node';
 import Block from './models/block';
+import connectionController from './controllers/connection';
 
 const router = Router();
 
-router.post('/connect', async (req, res) => {
-  const { nodes, host } = req.body;
-
-  blockchain.host = new PeerNode(host);
-
-  if (!nodes?.length) {
-    return res.status(204).json({});
-  }
-
-  await Promise.all(
-    nodes.map(async (node: string) => {
-      try {
-        const { data } = await axios.post<{
-          nodes: PeerNode[];
-          pendingTransactions: Transaction[];
-          chain: Block[];
-        }>(`${node}/listener/on-node-connection-request`, { host });
-
-        if (data.nodes) {
-          blockchain.updateNodes(data.nodes);
-        }
-
-        if (data.chain && data.chain.length > blockchain.chain.length) {
-          blockchain.updateChain(data.chain);
-        }
-
-        if (data.pendingTransactions) {
-          blockchain.updatePendingTransactions(data.pendingTransactions);
-        }
-
-        return await Promise.resolve();
-      } catch (e: any) {
-        console.log(e);
-        return await Promise.resolve();
-      }
-    }),
-  );
-
-  res.status(200).json({});
-});
-
-router.post('/listener/on-node-connection-request', (req, res) => {
-  const { host } = req.body;
-
-  blockchain.nodes.push(new PeerNode(host));
-
-  res.status(200).json({
-    nodes: [...blockchain.nodes, blockchain.host],
-    chain: blockchain.chain,
-    pendingTransactions: blockchain.pendingTransactions,
-  });
-});
+router.post('/connect', connectionController.connect);
+router.post('/listener/on-node-connection-request', connectionController.onNodeConnectionRequest);
 
 router.get('/chain', (req, res) => {
   res.json({ data: { chain: blockchain.chain, length: blockchain.chain.length } });
@@ -131,8 +82,6 @@ router.post('/listener/on-block-mined', (req, res) => {
 
 router.post('/listener/on-transaction-created', (req, res) => {
   const { transaction } = req.body;
-
-  console.log('body', req.body);
 
   try {
     blockchain.updatePendingTransactions([transaction]);

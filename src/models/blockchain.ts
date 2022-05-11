@@ -3,7 +3,7 @@ import { uniqBy } from 'lodash';
 import Block from './block';
 import Transaction from './transaction';
 import PeerNode from './node';
-import blockchain from '../../app';
+import { plainBlockToClass, plainTransactionToClass } from '../helpers/classess';
 
 class Blockchain {
   chain: Block[] = [];
@@ -18,42 +18,10 @@ class Blockchain {
     return genesisBlock.mine(this.difficulty).then((block) => {
       this.chain[0] = block;
     });
-
-    // this.chain[0] = new Block(
-    //   0,
-    //   [],
-    //   null,
-    //   1652180677624,
-    //   '0a7bc464e6b9ba766c12834bccc5bba2c798a0a99c1b26f06ee3be8560df46bb',
-    //   14,
-    // );
-
-    return Promise.resolve();
   }
 
   updateChain(inputChain: Block[]): void {
-    const chain = inputChain.map(
-      (block) =>
-        new Block(
-          block.index,
-          block.transactions.map(
-            (t) =>
-              new Transaction(
-                t.fromAddress,
-                t.toAddress,
-                t.amount,
-                t.hash,
-                t.signature,
-                t.timestamp,
-              ),
-          ),
-          block.previousHash,
-          block.timestamp,
-          block.hash,
-          block.nonce,
-        ),
-    );
-
+    const chain = inputChain.map((block) => plainBlockToClass(block));
     const isChainValid = this.isChainValid(chain);
 
     if (isChainValid) {
@@ -66,19 +34,13 @@ class Blockchain {
   }
 
   updatePendingTransactions(inputPendingTransactions: Transaction[]): void {
-    console.log('inputPendingTransactions', inputPendingTransactions);
     this.pendingTransactions = uniqBy(
       [
         ...this.pendingTransactions,
-        ...inputPendingTransactions.map(
-          (t) =>
-            new Transaction(t.fromAddress, t.toAddress, t.amount, t.hash, t.signature, t.timestamp),
-        ),
+        ...inputPendingTransactions.map((t) => plainTransactionToClass(t)),
       ],
       'hash',
     ).filter((t) => t.isValid());
-
-    console.log('pendingTransactions', this.pendingTransactions);
   }
 
   mineBlock(miningRewardAddress: string): Promise<Block> {
@@ -86,12 +48,13 @@ class Blockchain {
       .filter((t) => t.isValid())
       .filter((t) => !this.isTransactionExists(t));
 
-    const block = new Block(this.chain.length, transactions, this.getLastBlock().getHash());
+    const block = new Block(this.chain.length, transactions, this.getLastBlock().hash);
 
     return block.mine(this.difficulty).then((minedBlock) => {
-      if (blockchain.isChainValid([...this.chain, minedBlock])) {
+      if (this.isChainValid([...this.chain, minedBlock])) {
         this.chain.push(minedBlock);
         this.pendingTransactions = [new Transaction(null, miningRewardAddress, this.minningReward)];
+        // TODO ... send this transaction
         return minedBlock;
       }
 
@@ -118,13 +81,10 @@ class Blockchain {
   private isTransactionExists(checkingTransaction: Transaction): boolean {
     let exists = false;
 
-    console.log(checkingTransaction.hash);
-
     for (let i = 0; i < this.chain.length; i++) {
       for (let t = 0; t < this.chain[i].transactions.length; t++) {
         const transaction = this.chain[i].transactions[t];
 
-        console.log(transaction.hash);
         if (checkingTransaction.hash === transaction.hash) {
           exists = true;
           break;
@@ -160,11 +120,11 @@ class Blockchain {
       const currentBlock = chain[i];
       const prevBlock = chain[i - 1];
 
-      if (currentBlock.getHash() !== currentBlock.calculateHash()) {
+      if (currentBlock.hash !== currentBlock.calculateHash()) {
         throw new Error(`Hash of block #${currentBlock.index} is not correct`);
       }
 
-      if (currentBlock.previousHash !== prevBlock.getHash()) {
+      if (currentBlock.previousHash !== prevBlock.hash) {
         throw new Error(`Hash of block #${currentBlock.index} is not equal to its previous block`);
       }
 
